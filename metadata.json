@@ -1,0 +1,7 @@
+{
+  "name": "ZenStellar",
+  "description": "Daily fortunes, meditation with classic Guqin music, and an AI cultural sage.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
