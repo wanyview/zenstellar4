@@ -10,12 +10,34 @@ const GUQIN_SONGS = [
   "墨子悲丝", "长门怨", "鹤鸣九皋", "碧涧流泉", "归去来辞"
 ];
 
+// Using a public domain Guqin track (Pingsha Luoyan) for demonstration
+const DEMO_AUDIO_URL = "https://upload.wikimedia.org/wikipedia/commons/b/b5/Guqin_piece_-_Pingsha_Luoyan_%28Wild_Geese_Descending_on_the_Sandbank%29.ogg";
+
 const ZenTab: React.FC = () => {
   const [currentSongIndex, setCurrentSongIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [timer, setTimer] = useState(0);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
+  // Handle Play/Pause side effects
+  useEffect(() => {
+    if (audioRef.current) {
+      if (isPlaying) {
+        const playPromise = audioRef.current.play();
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            console.log("Auto-play prevented:", error);
+            setIsPlaying(false);
+          });
+        }
+      } else {
+        audioRef.current.pause();
+      }
+    }
+  }, [isPlaying]);
+
+  // Timer logic
   useEffect(() => {
     let interval: any;
     if (isPlaying) {
@@ -25,6 +47,17 @@ const ZenTab: React.FC = () => {
     }
     return () => clearInterval(interval);
   }, [isPlaying]);
+
+  // Handle song switching (Reset timer and keep playing)
+  useEffect(() => {
+    if (isPlaying) {
+      setTimer(0);
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+        audioRef.current.play();
+      }
+    }
+  }, [currentSongIndex]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -38,13 +71,36 @@ const ZenTab: React.FC = () => {
     } else {
       setCurrentSongIndex(index);
       setIsPlaying(true);
-      setTimer(0);
     }
+  };
+
+  const togglePlay = () => {
+    setIsPlaying(!isPlaying);
+  };
+
+  const handlePrev = () => {
+    const prev = currentSongIndex === 0 ? GUQIN_SONGS.length - 1 : currentSongIndex - 1;
+    setCurrentSongIndex(prev);
+    setIsPlaying(true);
+  };
+
+  const handleNext = () => {
+    const next = currentSongIndex === GUQIN_SONGS.length - 1 ? 0 : currentSongIndex + 1;
+    setCurrentSongIndex(next);
+    setIsPlaying(true);
   };
 
   return (
     <div className="flex flex-col h-full bg-stone-50">
       
+      {/* Hidden Audio Element */}
+      <audio 
+        ref={audioRef} 
+        src={DEMO_AUDIO_URL} 
+        loop 
+        onEnded={() => setTimer(0)}
+      />
+
       {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
          <div className="absolute top-[-10%] left-1/2 -translate-x-1/2 w-[150%] h-[50%] bg-gradient-to-b from-wood-100/50 to-transparent rounded-b-full blur-3xl opacity-60" />
@@ -79,36 +135,28 @@ const ZenTab: React.FC = () => {
         {/* Main Controls */}
         <div className="flex items-center space-x-6 mt-2">
            <button 
-             onClick={() => {
-               const prev = currentSongIndex === 0 ? GUQIN_SONGS.length - 1 : currentSongIndex - 1;
-               setCurrentSongIndex(prev);
-               setTimer(0);
-             }}
-             className="text-wood-400 hover:text-wood-600 transition-colors"
+             onClick={handlePrev}
+             className="text-wood-400 hover:text-wood-600 transition-colors p-2"
            >
-             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
+             <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg>
            </button>
 
            <button 
-            onClick={() => setIsPlaying(!isPlaying)}
-            className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${isPlaying ? 'bg-wood-100 text-wood-700' : 'bg-wood-600 text-white'}`}
+            onClick={togglePlay}
+            className={`w-16 h-16 rounded-full flex items-center justify-center shadow-lg transition-all active:scale-95 ${isPlaying ? 'bg-wood-100 text-wood-700' : 'bg-wood-600 text-white'}`}
           >
             {isPlaying ? (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
             ) : (
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
             )}
           </button>
 
           <button 
-             onClick={() => {
-               const next = currentSongIndex === GUQIN_SONGS.length - 1 ? 0 : currentSongIndex + 1;
-               setCurrentSongIndex(next);
-               setTimer(0);
-             }}
-             className="text-wood-400 hover:text-wood-600 transition-colors"
+             onClick={handleNext}
+             className="text-wood-400 hover:text-wood-600 transition-colors p-2"
            >
-             <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
+             <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg>
            </button>
         </div>
       </div>
@@ -158,7 +206,7 @@ const ZenTab: React.FC = () => {
             </div>
             
             <p className="text-center text-[10px] text-stone-300 mt-8 mb-4">
-               ZenStellar Audio Experience
+               Demo Mode: Plays 'Wild Geese Descending on the Sandbank'
             </p>
          </div>
       </div>
